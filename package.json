@@ -2,13 +2,14 @@
   "name": "openclaw-railway-full",
   "version": "1.0.0",
   "description": "Full OpenClaw deployment on Railway.app",
+  "type": "module",
   "main": "start.js",
   "scripts": {
     "start": "node start.js",
     "postinstall": "echo 'OpenClaw dependencies installed'"
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=22.12.0"
   },
   "dependencies": {
     "openclaw": "latest"
