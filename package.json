@@ -1,0 +1,19 @@
+{
+  "name": "openclaw-railway",
+  "version": "1.0.0", 
+  "description": "OpenClaw deployment for Railway.app",
+  "main": "start.js",
+  "scripts": {
+    "start": "node start.js",
+    "build": "echo 'No build step needed'"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "openclaw": "latest"
+  },
+  "keywords": ["ai", "assistant", "telegram", "openclaw"],
+  "author": "Suhrob",
+  "license": "MIT"
+}
