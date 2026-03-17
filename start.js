@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * Full OpenClaw Railway Deployment - ES MODULE VERSION
+ * Full OpenClaw Railway Deployment - FIXED ES MODULE
  */
 
 import { spawn } from 'child_process';
@@ -20,105 +20,111 @@ const NODE_ENV = process.env.NODE_ENV || 'production';
 // Memory optimization
 process.env.NODE_OPTIONS = '--max-old-space-size=512';
 
-console.log('🚄 Starting FULL OpenClaw on Railway.app (ES MODULE)...');
+console.log('🚄 Starting FULL OpenClaw on Railway.app (FIXED ES MODULE)...');
 console.log(`📊 Memory limit: 512MB, Port: ${PORT}`);
 console.log(`🔧 Node.js version: ${process.version}`);
 
-// Create OpenClaw directories
-const homeDir = process.env.HOME || '/tmp';
-const configDir = path.join(homeDir, '.openclaw');
-const workspaceDir = path.join(configDir, 'workspace');
-const agentDir = path.join(configDir, 'agents', 'main', 'agent');
+// Main function to avoid top-level return
+async function main() {
+  // Create OpenClaw directories
+  const homeDir = process.env.HOME || '/tmp';
+  const configDir = path.join(homeDir, '.openclaw');
+  const workspaceDir = path.join(configDir, 'workspace');
+  const agentDir = path.join(configDir, 'agents', 'main', 'agent');
 
-[configDir, workspaceDir, agentDir].forEach(dir => {
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true });
-  }
-});
+  [configDir, workspaceDir, agentDir].forEach(dir => {
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+  });
 
-// OpenClaw configuration
-const config = {
-  agents: {
-    defaults: {
-      model: {
-        primary: "anthropic/claude-sonnet-4-20250514"
-      },
-      models: {
-        "anthropic/claude-sonnet-4-20250514": {}
-      },
-      workspace: workspaceDir
-    }
-  },
-  channels: {
-    telegram: {
-      enabled: true,
-      botToken: process.env.TELEGRAM_BOT_TOKEN,
-      allowFrom: ["2870516"],
-      dmPolicy: "allowlist",
-      streaming: "partial"
-    }
-  },
-  gateway: {
-    port: PORT,
-    mode: "local",
-    bind: "lan"
-  },
-  auth: {
-    profiles: {
-      "anthropic:default": {
-        provider: "anthropic",
-        mode: "token"
+  // OpenClaw configuration
+  const config = {
+    agents: {
+      defaults: {
+        model: {
+          primary: "anthropic/claude-sonnet-4-20250514"
+        },
+        models: {
+          "anthropic/claude-sonnet-4-20250514": {}
+        },
+        workspace: workspaceDir
+      }
+    },
+    channels: {
+      telegram: {
+        enabled: true,
+        botToken: process.env.TELEGRAM_BOT_TOKEN,
+        allowFrom: ["2870516"],
+        dmPolicy: "allowlist",
+        streaming: "partial"
+      }
+    },
+    gateway: {
+      port: PORT,
+      mode: "local",
+      bind: "lan"
+    },
+    auth: {
+      profiles: {
+        "anthropic:default": {
+          provider: "anthropic",
+          mode: "token"
+        }
       }
     }
-  }
-};
+  };
 
-// Write config
-fs.writeFileSync(path.join(configDir, 'openclaw.json'), JSON.stringify(config, null, 2));
+  // Write config
+  fs.writeFileSync(path.join(configDir, 'openclaw.json'), JSON.stringify(config, null, 2));
 
-// Auth profiles
-const authProfiles = {
-  version: 1,
-  profiles: {
-    "anthropic:default": {
-      type: "token", 
-      provider: "anthropic",
-      token: process.env.ANTHROPIC_API_KEY
+  // Auth profiles
+  const authProfiles = {
+    version: 1,
+    profiles: {
+      "anthropic:default": {
+        type: "token", 
+        provider: "anthropic",
+        token: process.env.ANTHROPIC_API_KEY
+      }
     }
-  }
-};
+  };
 
-fs.writeFileSync(path.join(agentDir, 'auth-profiles.json'), JSON.stringify(authProfiles, null, 2));
+  fs.writeFileSync(path.join(agentDir, 'auth-profiles.json'), JSON.stringify(authProfiles, null, 2));
 
-// Create basic workspace files
-const identityContent = `# IDENTITY.md
+  // Create basic workspace files
+  const identityContent = `# IDENTITY.md
 
 - **Name:** Дарахт (Daraxt) 
 - **Creature:** AI-помощник на Railway.app
 - **Emoji:** 🌳`;
 
-fs.writeFileSync(path.join(workspaceDir, 'IDENTITY.md'), identityContent);
+  fs.writeFileSync(path.join(workspaceDir, 'IDENTITY.md'), identityContent);
 
-console.log('✅ OpenClaw configuration created');
-console.log('🔑 Auth profiles configured');
-console.log('📁 Workspace initialized');
+  console.log('✅ OpenClaw configuration created');
+  console.log('🔑 Auth profiles configured');
+  console.log('📁 Workspace initialized');
 
-// Check Node.js version
-const nodeVersion = process.version;
-const majorVersion = parseInt(nodeVersion.slice(1).split('.')[0]);
-const minorVersion = parseInt(nodeVersion.slice(1).split('.')[1]);
+  // Check Node.js version
+  const nodeVersion = process.version;
+  const majorVersion = parseInt(nodeVersion.slice(1).split('.')[0]);
+  const minorVersion = parseInt(nodeVersion.slice(1).split('.')[1]);
 
-console.log(`🔧 Node.js version check: ${nodeVersion}`);
+  console.log(`🔧 Node.js version check: ${nodeVersion}`);
 
-if (majorVersion < 22 || (majorVersion === 22 && minorVersion < 12)) {
-  console.log('❌ Node.js version too old for OpenClaw');
-  console.log(`Required: v22.12+, Current: ${nodeVersion}`);
-  startFallbackServer('Node.js version too old');
-  return;
+  if (majorVersion < 22 || (majorVersion === 22 && minorVersion < 12)) {
+    console.log('❌ Node.js version too old for OpenClaw');
+    console.log(`Required: v22.12+, Current: ${nodeVersion}`);
+    console.log('🆘 Railway still uses old Node.js version');
+    startFallbackServer('Node.js version too old - Railway needs update');
+    return;
+  }
+
+  // Try to find and start OpenClaw
+  startOpenClaw(homeDir);
 }
 
-// Try to find and start OpenClaw
-function startOpenClaw() {
+function startOpenClaw(homeDir) {
   console.log('🚀 Attempting to start OpenClaw Gateway...');
   
   // Try direct node_modules path
@@ -207,7 +213,8 @@ function startFallbackServer(reason = 'unknown') {
         <p>• Node.js version: ${process.version}</p>
         <p>• OpenClaw status: ❌ ${reason}</p>
         <hr>
-        <p>⚠️ OpenClaw требует Node.js v22.12+ и может быть слишком тяжёлым для Railway</p>
+        <p>⚠️ Railway всё ещё использует Node.js v22.11.0</p>
+        <p>OpenClaw требует v22.12+ - нужна другая платформа</p>
       `);
     }
   });
@@ -218,13 +225,16 @@ function startFallbackServer(reason = 'unknown') {
   });
 }
 
-// Start the process
-startOpenClaw();
-
 // Graceful shutdown
 process.on('SIGTERM', () => {
   console.log('📴 Shutting down...');
   process.exit(0);
 });
 
-console.log('🌳 Дарахт запускается на Railway (ES Module версия)!');
+// Run main function
+main().catch((err) => {
+  console.error('❌ Main function error:', err);
+  startFallbackServer(`Startup error: ${err.message}`);
+});
+
+console.log('🌳 Дарахт запускается на Railway (исправленная ES Module версия)!');
