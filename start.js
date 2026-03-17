@@ -14,7 +14,7 @@ const PORT = process.env.PORT || 18789;
 const NODE_ENV = process.env.NODE_ENV || 'production';
 
 // Memory optimization for Railway
-process.env.NODE_OPTIONS = '--max-old-space-size=512 --max-heap-size=512';
+process.env.NODE_OPTIONS = '--max-old-space-size=512';
 
 console.log('🚄 Starting OpenClaw on Railway.app...');
 console.log(`📊 Memory limit: 512MB, Port: ${PORT}`);
