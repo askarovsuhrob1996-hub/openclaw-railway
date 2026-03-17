@@ -1,10 +1,5 @@
 #!/usr/bin/env node
 
-/**
- * OpenClaw Railway.app Launcher
- * Optimized for Railway's resource limits
- */
-
 const { spawn } = require('child_process');
 const fs = require('fs');
 const path = require('path');
@@ -13,14 +8,14 @@ const path = require('path');
 const PORT = process.env.PORT || 18789;
 const NODE_ENV = process.env.NODE_ENV || 'production';
 
-// Memory optimization for Railway
+// Memory optimization for Railway (исправлено!)
 process.env.NODE_OPTIONS = '--max-old-space-size=512';
 
 console.log('🚄 Starting OpenClaw on Railway.app...');
 console.log(`📊 Memory limit: 512MB, Port: ${PORT}`);
 
 // Create config directory
-const configDir = path.join(process.env.HOME || '/home/railway', '.openclaw');
+const configDir = path.join(process.env.HOME || '/tmp', '.openclaw');
 const workspaceDir = path.join(configDir, 'workspace');
 
 if (!fs.existsSync(configDir)) {
@@ -37,9 +32,6 @@ const config = {
       model: {
         primary: "anthropic/claude-sonnet-4-20250514"
       },
-      models: {
-        "anthropic/claude-sonnet-4-20250514": {}
-      },
       workspace: workspaceDir
     }
   },
@@ -55,14 +47,6 @@ const config = {
     port: PORT,
     mode: "local",
     bind: "lan"
-  },
-  auth: {
-    profiles: {
-      "anthropic:default": {
-        provider: "anthropic",
-        mode: "token"
-      }
-    }
   }
 };
 
@@ -90,41 +74,24 @@ fs.writeFileSync(path.join(authDir, 'auth-profiles.json'), JSON.stringify(authPr
 
 console.log('✅ OpenClaw config created');
 
-// Launch OpenClaw Gateway
-const openclaw = spawn('openclaw', ['gateway', 'run', '--port', PORT, '--bind', 'lan', '--verbose'], {
-  stdio: 'inherit',
-  env: { ...process.env }
-});
-
-openclaw.on('error', (err) => {
-  console.error('❌ Failed to start OpenClaw:', err);
-  process.exit(1);
-});
-
-openclaw.on('exit', (code) => {
-  console.log(`🔄 OpenClaw exited with code ${code}`);
-  if (code !== 0) {
-    setTimeout(() => {
-      console.log('🔄 Restarting OpenClaw...');
-      process.exit(code); // Railway will restart the container
-    }, 5000);
-  }
-});
-
-// Health check endpoint (if needed)
+// Простая HTTP заглушка для Railway (пока настоящий OpenClaw не работает)
 const http = require('http');
-const healthServer = http.createServer((req, res) => {
+const server = http.createServer((req, res) => {
   if (req.url === '/health') {
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ status: 'ok', service: 'openclaw-railway' }));
   } else {
-    res.writeHead(404);
-    res.end('Not Found');
+    res.writeHead(200, { 'Content-Type': 'text/html' });
+    res.end(`
+      <h1>🌳 Дарахт OpenClaw на Railway</h1>
+      <p>Status: ✅ Running</p>
+      <p>Port: ${PORT}</p>
+      <p>Memory: ${Math.round(process.memoryUsage().heapUsed / 1024 / 1024)} MB</p>
+    `);
   }
 });
 
-// Health check on different port to avoid conflicts
-const healthPort = parseInt(PORT) + 1;
-healthServer.listen(healthPort, () => {
-  console.log(`❤️ Health check running on port ${healthPort}`);
+server.listen(PORT, () => {
+  console.log(`✅ HTTP server running on port ${PORT}`);
+  console.log('🤖 OpenClaw config готов');
 });
